@@ -1,0 +1,53 @@
+spec_version: 1
+name: quantum_circuit_optimizer
+type: space
+runtime: fastapi
+app: server.app:app
+port: 7860
+description: >-
+  Noise-aware, hardware-constrained quantum circuit optimization environment.
+  Train RL agents to design quantum circuits that maximize fidelity to target
+  states while minimizing depth, gate count, and noise impact.
+tasks:
+  - id: easy
+    name: Bell State
+    description: "Generate Bell state (|00>+|11>)/sqrt(2) - 2 qubits, no noise"
+  - id: medium
+    name: GHZ State
+    description: "Generate GHZ state (|000>+|111>)/sqrt(2) - 3 qubits, depolarizing noise, linear connectivity"
+  - id: hard
+    name: Unitary Approximation
+    description: "Approximate Ry(pi/3)@Rz(pi/4).CNOT - 2 qubits, thermal noise, restricted connectivity"
+action_schema:
+  type: object
+  required: ["action_type"]
+  properties:
+    action_type:
+      type: string
+      enum: [ADD, REMOVE, SWAP, PARAM, STOP]
+    gate:
+      type: string
+      enum: [H, X, CNOT, RX, RZ]
+    qubits:
+      type: array
+      items:
+        type: integer
+    parameter:
+      type: number
+observation_schema:
+  type: object
+  properties:
+    circuit_gates:
+      type: array
+    fidelity:
+      type: number
+    depth:
+      type: integer
+    gate_count:
+      type: integer
+    noise_estimate:
+      type: number
+    valid_actions:
+      type: array
+    score:
+      type: number

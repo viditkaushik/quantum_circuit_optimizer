@@ -1,0 +1,43 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "openenv-quantum-circuit-opt"
+version = "0.1.0"
+description = "Noise-aware, hardware-constrained quantum circuit optimization environment for OpenEnv"
+requires-python = ">=3.10"
+dependencies = [
+    # Core OpenEnv runtime (provides FastAPI server + HTTP client types)
+    "openenv-core[core]>=0.2.2",
+    # Environment-specific dependencies
+    "numpy>=1.24.0",
+    # Qiskit: lightweight statevector physics backend (no Aer/noise models)
+    "qiskit>=1.0.0",
+    # Visual web interface
+    "gradio>=4.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.0.0",
+]
+inference = [
+    "openai>=1.0.0",
+]
+
+[project.scripts]
+# Server entry point - enables running via: uv run --project . server
+server = "my_env.server.app:main"
+
+[tool.setuptools]
+include-package-data = true
+packages = ["my_env", "my_env.server", "my_env.graders"]
+package-dir = { "my_env" = ".", "my_env.server" = "server", "my_env.graders" = "graders" }

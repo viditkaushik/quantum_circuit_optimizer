@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚛️ Quantum Circuit Optimizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 30px;
+        }
+
+        .panel {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .panel h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .control-group select,
+        .control-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .control-group select:focus,
+        .control-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .status-box {
+            background: white;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .circuit-display {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            min-height: 200px;
+            overflow-x: auto;
+            white-space: pre;
+        }
+
+        .scores-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .score-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid #e0e0e0;
+        }
+
+        .score-card .label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .score-card .value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .history-log {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .history-log .step {
+            padding: 8px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .history-log .step:last-child {
+            border-bottom: none;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .task-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196f3;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #c62828;
+            display: none;
+        }
+
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2e7d32;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚛️ Quantum Circuit Optimizer</h1>
+            <p>Build quantum circuits step-by-step to maximize fidelity with target quantum states</p>
+        </div>
+
+        <div class="main-content">
+            <!-- Left Panel: Controls -->
+            <div class="panel">
+                <h2>🎮 Controls</h2>
+                
+                <div class="error" id="errorMsg"></div>
+                <div class="success" id="successMsg"></div>
+
+                <div class="control-group">
+                    <label for="taskSelect">🎯 Select Task</label>
+                    <select id="taskSelect">
+                        <option value="easy">Bell State (Easy) - 2 qubits, no noise</option>
+                        <option value="medium">GHZ State (Medium) - 3 qubits, depolarizing noise</option>
+                        <option value="hard">Unitary Approximation (Hard) - 2 qubits, thermal noise</option>
+                    </select>
+                </div>
+
+                <button class="btn-primary" onclick="resetEnvironment()">🔄 Reset Environment</button>
+
+                <hr style="margin: 30px 0; border: none; border-top: 2px solid #e0e0e0;">
+
+                <div class="control-group">
+                    <label for="actionType">⚡ Action Type</label>
+                    <select id="actionType" onchange="updateActionFields()">
+                        <option value="ADD">ADD - Add a quantum gate</option>
+                        <option value="REMOVE">REMOVE - Remove last gate</option>
+                        <option value="SWAP">SWAP - Swap two qubits</option>
+                        <option value="PARAM">PARAM - Tune parameter</option>
+                        <option value="STOP">STOP - End episode</option>
+                    </select>
+                </div>
+
+                <div class="control-group" id="gateGroup">
+                    <label for="gateType">🚪 Gate Type</label>
+                    <select id="gateType">
+                        <option value="H">H - Hadamard</option>
+                        <option value="X">X - Pauli-X (NOT)</option>
+                        <option value="CNOT">CNOT - Controlled-NOT</option>
+                        <option value="RX">RX - Rotation around X</option>
+                        <option value="RZ">RZ - Rotation around Z</option>
+                    </select>
+                </div>
+
+                <div class="control-group" id="qubit0Group">
+                    <label for="qubit0">📍 Qubit 0</label>
+                    <input type="number" id="qubit0" value="0" min="0" max="3">
+                </div>
+
+                <div class="control-group" id="qubit1Group">
+                    <label for="qubit1">📍 Qubit 1 (for CNOT/SWAP)</label>
+                    <input type="number" id="qubit1" value="1" min="0" max="3">
+                </div>
+
+                <div class="control-group" id="paramGroup">
+                    <label for="parameter">🔢 Parameter θ (radians)</label>
+                    <input type="number" id="parameter" step="0.1" placeholder="e.g., 1.5708 for π/2">
+                </div>
+
+                <button class="btn-secondary" onclick="executeStep()">▶️ Execute Step</button>
+
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Processing...</p>
+                </div>
+            </div>
+
+            <!-- Right Panel: Status & Scores -->
+            <div class="panel">
+                <h2>📊 Status & Metrics</h2>
+                
+                <div class="status-box" id="statusBox">
+                    Click "Reset Environment" to start
+                </div>
+
+                <div class="task-info" id="taskInfo" style="display: none;">
+                    <strong>Current Task:</strong> <span id="currentTask">-</span><br>
+                    <strong>Qubits:</strong> <span id="numQubits">-</span> | 
+                    <strong>Step:</strong> <span id="stepCount">0</span>/<span id="maxSteps">0</span>
+                </div>
+
+                <div class="scores-grid">
+                    <div class="score-card">
+                        <div class="label">Fidelity</div>
+                        <div class="value" id="fidelityScore">0.0000</div>
+                    </div>
+                    <div class="score-card">
+                        <div class="label">Aggregate Score</div>
+                        <div class="value" id="aggregateScore">0.0000</div>
+                    </div>
+                    <div class="score-card">
+                        <div class="label">Efficiency</div>
+                        <div class="value" id="efficiencyScore">0.0000</div>
+                    </div>
+                    <div class="score-card">
+                        <div class="label">Noise</div>
+                        <div class="value" id="noiseScore">0.0000</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Full Width: Circuit Display -->
+            <div class="panel full-width">
+                <h2>🔗 Current Circuit</h2>
+                <div class="circuit-display" id="circuitDisplay">(empty circuit)</div>
+            </div>
+
+            <!-- Full Width: Step History -->
+            <div class="panel full-width">
+                <h2>📜 Step History</h2>
+                <div class="history-log" id="historyLog">
+                    No steps yet. Reset the environment to begin.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentObservation = null;
+        let stepHistory = [];
+
+        // Update action fields based on selected action type
+        function updateActionFields() {
+            const actionType = document.getElementById('actionType').value;
+            const gateGroup = document.getElementById('gateGroup');
+            const qubit0Group = document.getElementById('qubit0Group');
+            const qubit1Group = document.getElementById('qubit1Group');
+            const paramGroup = document.getElementById('paramGroup');
+
+            // Reset visibility
+            gateGroup.style.display = 'none';
+            qubit0Group.style.display = 'none';
+            qubit1Group.style.display = 'none';
+            paramGroup.style.display = 'none';
+
+            if (actionType === 'ADD') {
+                gateGroup.style.display = 'block';
+                qubit0Group.style.display = 'block';
+                qubit1Group.style.display = 'block';
+                paramGroup.style.display = 'block';
+            } else if (actionType === 'SWAP') {
+                qubit0Group.style.display = 'block';
+                qubit1Group.style.display = 'block';
+            } else if (actionType === 'PARAM') {
+                paramGroup.style.display = 'block';
+            }
+        }
+
+        // Reset environment
+        async function resetEnvironment() {
+            const taskId = document.getElementById('taskSelect').value;
+            showLoading(true);
+            hideMessages();
+
+            try {
+                const response = await fetch('/reset', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ task_id: taskId })
+                });
+
+                if (!response.ok) throw new Error('Reset failed');
+
+                currentObservation = await response.json();
+                stepHistory = [];
+                updateUI();
+                showSuccess('Environment reset successfully!');
+            } catch (error) {
+                showError('Failed to reset environment: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Execute step
+        async function executeStep() {
+            if (!currentObservation) {
+                showError('Please reset the environment first!');
+                return;
+            }
+
+            if (currentObservation.done) {
+                showError('Episode is complete. Reset to continue.');
+                return;
+            }
+
+            const actionType = document.getElementById('actionType').value;
+            const action = { action_type: actionType };
+
+            if (actionType === 'ADD') {
+                action.gate = document.getElementById('gateType').value;
+                action.qubits = [parseInt(document.getElementById('qubit0').value)];
+                
+                if (action.gate === 'CNOT') {
+                    action.qubits.push(parseInt(document.getElementById('qubit1').value));
+                }
+
+                if (action.gate === 'RX' || action.gate === 'RZ') {
+                    const param = document.getElementById('parameter').value;
+                    if (param) action.parameter = parseFloat(param);
+                }
+            } else if (actionType === 'SWAP') {
+                action.qubits = [
+                    parseInt(document.getElementById('qubit0').value),
+                    parseInt(document.getElementById('qubit1').value)
+                ];
+            } else if (actionType === 'PARAM') {
+                const param = document.getElementById('parameter').value;
+                if (param) action.parameter = parseFloat(param);
+            }
+
+            showLoading(true);
+            hideMessages();
+
+            try {
+                const response = await fetch('/step', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(action)
+                });
+
+                if (!response.ok) throw new Error('Step execution failed');
+
+                currentObservation = await response.json();
+                
+                // Add to history
+                const historyEntry = `Step ${currentObservation.steps_taken}: ${actionType} → fid=${currentObservation.fidelity.toFixed(4)} score=${currentObservation.score.toFixed(4)} reward=${currentObservation.reward >= 0 ? '+' : ''}${currentObservation.reward.toFixed(4)}`;
+                stepHistory.push(historyEntry);
+
+                updateUI();
+                
+                if (currentObservation.done) {
+                    showSuccess('Episode complete! Final score: ' + currentObservation.score.toFixed(4));
+                }
+            } catch (error) {
+                showError('Failed to execute step: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Update UI with current observation
+        function updateUI() {
+            if (!currentObservation) return;
+
+            // Status box
+            const statusBox = document.getElementById('statusBox');
+            statusBox.innerHTML = `
+                <strong>Task:</strong> ${currentObservation.task_id} | 
+                <strong>Qubits:</strong> ${currentObservation.num_qubits} | 
+                <strong>Step:</strong> ${currentObservation.steps_taken}/${currentObservation.max_steps}<br>
+                <strong>Fidelity:</strong> ${currentObservation.fidelity.toFixed(4)} | 
+                <strong>Score:</strong> ${currentObservation.score.toFixed(4)} | 
+                <strong>Reward:</strong> ${currentObservation.reward >= 0 ? '+' : ''}${currentObservation.reward.toFixed(4)}
+                ${currentObservation.done ? '<br><strong style="color: #c62828;">>>> EPISODE COMPLETE <<<</strong>' : ''}
+            `;
+
+            // Task info
+            document.getElementById('taskInfo').style.display = 'block';
+            document.getElementById('currentTask').textContent = currentObservation.task_id;
+            document.getElementById('numQubits').textContent = currentObservation.num_qubits;
+            document.getElementById('stepCount').textContent = currentObservation.steps_taken;
+            document.getElementById('maxSteps').textContent = currentObservation.max_steps;
+
+            // Scores
+            document.getElementById('fidelityScore').textContent = currentObservation.fidelity.toFixed(4);
+            document.getElementById('aggregateScore').textContent = currentObservation.score.toFixed(4);
+            
+            const metadata = currentObservation.metadata || {};
+            document.getElementById('efficiencyScore').textContent = (metadata.efficiency_score || 0).toFixed(4);
+            document.getElementById('noiseScore').textContent = (metadata.noise_score || 0).toFixed(4);
+
+            // Circuit display
+            const circuitDisplay = document.getElementById('circuitDisplay');
+            if (currentObservation.circuit_gates && currentObservation.circuit_gates.length > 0) {
+                let circuitText = '';
+                currentObservation.circuit_gates.forEach((gate, i) => {
+                    const qubits = gate.qubits.join(',');
+                    const param = gate.parameter !== undefined ? `, θ=${gate.parameter.toFixed(4)}` : '';
+                    circuitText += `  ${(i+1).toString().padStart(2)}. ${gate.gate}(${qubits}${param})\n`;
+                });
+                circuitDisplay.textContent = circuitText;
+            } else {
+                circuitDisplay.textContent = '(empty circuit)';
+            }
+
+            // History log
+            const historyLog = document.getElementById('historyLog');
+            if (stepHistory.length > 0) {
+                historyLog.innerHTML = stepHistory.map(step => 
+                    `<div class="step">${step}</div>`
+                ).join('');
+                historyLog.scrollTop = historyLog.scrollHeight;
+            } else {
+                historyLog.textContent = 'No steps yet.';
+            }
+        }
+
+        // UI helpers
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+
+        function showError(message) {
+            const errorMsg = document.getElementById('errorMsg');
+            errorMsg.textContent = message;
+            errorMsg.style.display = 'block';
+            setTimeout(() => errorMsg.style.display = 'none', 5000);
+        }
+
+        function showSuccess(message) {
+            const successMsg = document.getElementById('successMsg');
+            successMsg.textContent = message;
+            successMsg.style.display = 'block';
+            setTimeout(() => successMsg.style.display = 'none', 5000);
+        }
+
+        function hideMessages() {
+            document.getElementById('errorMsg').style.display = 'none';
+            document.getElementById('successMsg').style.display = 'none';
+        }
+
+        // Initialize
+        updateActionFields();
+    </script>
+</body>
+</html>
