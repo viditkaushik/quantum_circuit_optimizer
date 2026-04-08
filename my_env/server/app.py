@@ -24,7 +24,7 @@ for _p in (_ROOT, _HERE):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Body
 from fastapi.responses import RedirectResponse
 import gradio as gr
 from pydantic import BaseModel
@@ -32,7 +32,7 @@ from pydantic import BaseModel
 from openenv.core.env_server import create_fastapi_app
 
 from models import ActionType, GateType, QuantumAction, QuantumObservation
-from server.my_env_environment import QuantumCircuitEnvironment
+from .my_env_environment import QuantumCircuitEnvironment
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -68,21 +68,22 @@ class ResetRequest(BaseModel):
 
 # Root-level endpoints for OpenEnv validation
 @fastapi_app.post("/reset")
-def reset_endpoint(req: ResetRequest = ResetRequest()):
+def reset_endpoint(body: dict = Body(default={})):
     """OpenEnv-compliant reset endpoint."""
-    task_id = req.task_id if req else "easy"
+    task_id = body.get("task_id", "easy")
     temp_env = QuantumCircuitEnvironment(seed=42)
     obs = temp_env.reset(config={"task_id": task_id})
-    return obs.dict() if hasattr(obs, "dict") else obs
+    obs_dict = obs.model_dump() if hasattr(obs, "model_dump") else obs.dict()
+    return JSONResponse(content={"observation": obs_dict})
 
 @fastapi_app.post("/step")
 def step_endpoint(action: QuantumAction):
     """OpenEnv-compliant step endpoint."""
-    # Note: This is stateless for validation purposes
     temp_env = QuantumCircuitEnvironment(seed=42)
     temp_env.reset(config={"task_id": "easy"})
     obs = temp_env.step(action)
-    return obs.dict() if hasattr(obs, "dict") else obs
+    obs_dict = obs.model_dump() if hasattr(obs, "model_dump") else obs.dict()
+    return JSONResponse(content={"observation": obs_dict})
 
 @fastapi_app.get("/state")
 def state_endpoint():
@@ -90,7 +91,8 @@ def state_endpoint():
     temp_env = QuantumCircuitEnvironment(seed=42)
     temp_env.reset(config={"task_id": "easy"})
     state = temp_env.state
-    return state.dict() if hasattr(state, "dict") else state
+    state_dict = state.model_dump() if hasattr(state, "model_dump") else state.dict()
+    return JSONResponse(content={"state": state_dict})
 
 # API endpoints (for programmatic access with global env)
 @fastapi_app.post("/api/reset")
@@ -558,15 +560,8 @@ def create_gradio_app() -> gr.Blocks:
 # ---------------------------------------------------------------------------
 demo = create_gradio_app()
 
-# Mount Gradio at /ui instead of root to avoid route conflicts
-app = gr.mount_gradio_app(fastapi_app, demo, path="/ui")
-
-# Add root redirect to Gradio UI
-from fastapi.responses import RedirectResponse
-
-@app.get("/")
-async def root_redirect():
-    return RedirectResponse(url="/ui")
+# Mount Gradio at root
+app = gr.mount_gradio_app(fastapi_app, demo, path="/")
 
 # ---------------------------------------------------------------------------
 # Entry Point

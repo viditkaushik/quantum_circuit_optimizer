@@ -1,0 +1,11 @@
+openenv-core[core]>=0.2.2
+numpy>=1.24.0
+qiskit>=1.0.0
+gradio>=4.0.0
+
+[dev]
+pytest>=8.0.0
+pytest-cov>=4.0.0
+
+[inference]
+openai>=1.0.0

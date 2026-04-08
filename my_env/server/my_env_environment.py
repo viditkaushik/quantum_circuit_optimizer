@@ -243,6 +243,8 @@ class QuantumCircuitEnvironment(Environment):
         self._prev_action: Optional[ActionType] = None
         self._last_reward: float = 0.0
         self._episode_id: str = str(uuid4())
+        self._swap_count: int = 0
+        self._prev_penalty: float = 0.0
 
         # Graders
         self._aggregate_grader = AggregateGrader()
@@ -567,6 +569,7 @@ class QuantumCircuitEnvironment(Environment):
                 "gate":   "SWAP",
                 "qubits": list(action.qubits),
             })
+            self._swap_count += 1
 
         elif at == ActionType.PARAM:
             # Tune the parameter of the last parametric gate

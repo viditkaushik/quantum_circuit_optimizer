@@ -1,52 +1,218 @@
 ---
-title: Quantum Circuit Optimization Environment
-emoji: "⭐"
+title: Quantum Circuit Optimizer
+emoji: "⚛️"
 colorFrom: indigo
 colorTo: blue
 sdk: docker
 pinned: false
 app_port: 7860
 tags:
-  - openenv
   - quantum
   - reinforcement-learning
+  - circuit-optimization
+  - gradio
+  - qiskit
 ---
 
-#  Quantum Circuit Optimization Environment
+# ⚛️ Quantum Circuit Optimizer
 
-> **🚀 Deployment Status: READY** | All OpenEnv compliance requirements verified ✅
-> 
-> See [DEPLOYMENT_READY.md](DEPLOYMENT_READY.md) for full checklist
+A web-based reinforcement learning environment for optimizing quantum circuits. Build and optimize quantum circuits step-by-step to maximize fidelity with target quantum states while respecting hardware constraints and noise.
 
-A **noise-aware, hardware-constrained** reinforcement learning environment for quantum circuit design and optimisation, built on the [OpenEnv](https://github.com/meta-pytorch/OpenEnv) framework.
+## 🌟 Features
 
-##  Real-World Relevance
+- **Interactive Web UI**: Built with Gradio for easy circuit construction
+- **Reinforcement Learning Ready**: Compatible with RL algorithms for automated optimization
+- **Hardware-Aware**: Respects qubit connectivity and gate constraints
+- **Noise Simulation**: Includes noise models for realistic NISQ-era circuits
+- **Multiple Tasks**: From simple Bell states to complex unitary approximations
 
-Quantum hardware is fragile and expensive. Current NISQ (Noisy Intermediate-Scale Quantum) devices have limited qubit counts, noisy gates, and restricted connectivity. Efficiently compiling and optimising quantum circuits is a **real bottleneck** in quantum computing today. This environment directly maps to:
+## 🎯 Problem Statement
 
-- **Quantum compiler optimisation** -- replacing heuristic compilers with learned agents
-- **Hardware-aware circuit design** -- respecting physical qubit topology
-- **NISQ-era algorithm engineering** -- maximising fidelity under noise
+The agent must construct quantum circuits to:
 
-##  Problem
+1. **Maximize Fidelity** - Match target quantum states
+2. **Minimize Depth** - Shorter circuits run faster
+3. **Minimize Gate Count** - Fewer operations reduce noise
+4. **Respect Connectivity** - Multi-qubit gates only on connected qubits
+5. **Resist Noise** - Circuits must survive decoherence
 
-The agent must construct quantum circuits step-by-step to:
-
-1. **Maximise fidelity** -- match a target quantum state
-2. **Minimise depth** -- shorter circuits run faster
-3. **Minimise gate count** -- fewer operations = less noise
-4. **Respect connectivity** -- multi-qubit gates only on connected qubits
-5. **Resist noise** -- circuits must survive decoherence
-
-##  Action Space
+## 🚀 Action Space
 
 | Action | Description | Parameters |
 |--------|-------------|------------|
 | `ADD`  | Add a quantum gate | `gate` (H, X, CNOT, RX, RZ), `qubits`, `parameter` |
-| `REMOVE` | Remove the last gate | -- |
+| `REMOVE` | Remove last gate | -- |
 | `SWAP` | Swap two qubits | `qubits` [q1, q2] |
-| `PARAM` | Tune last parametric gate | `parameter` (angle) |
-| `STOP` | End the episode | -- |
+| `PARAM` | Tune parametric gate | `parameter` (angle in radians) |
+| `STOP` | End episode | -- |
+
+**Available Gates:**
+- **H** - Hadamard (single qubit)
+- **X** - Pauli-X / NOT (single qubit)
+- **CNOT** - Controlled-NOT (two qubits)
+- **RX(θ)** - Rotation around X-axis (parameterized)
+- **RZ(θ)** - Rotation around Z-axis (parameterized)
+
+## 🏗️ Architecture
+
+- **Backend**: Qiskit for quantum state simulation
+- **Frontend**: Gradio web interface
+- **Server**: FastAPI with WebSocket support
+- **Environment**: Custom Gym-compatible RL environment
+
+## 🚀 Quick Start
+
+### Local Development
+
+1. **Clone and setup:**
+   ```bash
+   git clone https://github.com/viditkaushik/quantum_circuit_optimizer.git
+   cd quantum_circuit_optimizer
+   pip install -r requirements.txt
+   ```
+
+2. **Run locally:**
+   ```bash
+   python server/app.py
+   # Or with uvicorn:
+   uvicorn server.app:app --host 0.0.0.0 --port 7860
+   ```
+
+3. **Open browser:** http://localhost:7860
+
+### Docker Deployment
+
+```bash
+# Build image
+docker build -t quantum-circuit-optimizer .
+
+# Run container
+docker run -p 7860:7860 quantum-circuit-optimizer
+```
+
+## 📊 Tasks
+
+- **Easy**: Bell State (2 qubits, no noise)
+- **Medium**: GHZ State (3 qubits, depolarizing noise)
+- **Hard**: Unitary Approximation (2 qubits, thermal noise)
+- **Efficient**: Imperfect but Efficient (budget constraints)
+- **Noisy**: Noise-Dominant (high decoherence)
+- **Budget**: Budgeted Optimization (resource limits)
+- **Approx**: Approximate Target (tolerance-based)
+
+## 🔧 API Endpoints
+
+- `POST /reset` - Reset environment with task
+- `POST /step` - Execute action
+- `GET /state` - Get current state
+- `GET /health` - Health check
+
+## 📈 Metrics
+
+- **Fidelity**: How close circuit output is to target state
+- **Efficiency**: Circuit depth and gate count
+- **Noise Score**: Resilience to decoherence
+- **Constraints Score**: Hardware constraint satisfaction
+- **Aggregate Score**: Weighted combination of above
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create feature branch
+3. Make changes
+4. Add tests
+5. Submit pull request
+
+## 📄 License
+
+This project is licensed under the BSD-style license.
+
+## 🙏 Acknowledgments
+
+Built using Qiskit, Gradio, FastAPI, and OpenEnv framework.
+- **H** - Hadamard (single qubit)
+- **X** - Pauli-X / NOT (single qubit)
+- **CNOT** - Controlled-NOT (two qubits)
+- **RX(θ)** - Rotation around X-axis (parameterized)
+- **RZ(θ)** - Rotation around Z-axis (parameterized)
+
+## 🏗️ Architecture
+
+- **Backend**: Qiskit for quantum state simulation
+- **Frontend**: Gradio web interface
+- **Server**: FastAPI with WebSocket support
+- **Environment**: Custom Gym-compatible RL environment
+
+## 🚀 Quick Start
+
+### Local Development
+
+1. **Clone and setup:**
+   ```bash
+   git clone https://github.com/viditkaushik/quantum_circuit_optimizer.git
+   cd quantum_circuit_optimizer
+   pip install -r requirements.txt
+   ```
+
+2. **Run locally:**
+   ```bash
+   python server/app.py
+   # Or with uvicorn:
+   uvicorn server.app:app --host 0.0.0.0 --port 7860
+   ```
+
+3. **Open browser:** http://localhost:7860
+
+### Docker Deployment
+
+```bash
+# Build image
+docker build -t quantum-circuit-optimizer .
+
+# Run container
+docker run -p 7860:7860 quantum-circuit-optimizer
+```
+
+## 📊 Tasks
+
+- **Easy**: Bell State (2 qubits, no noise)
+- **Medium**: GHZ State (3 qubits, depolarizing noise)
+- **Hard**: Unitary Approximation (2 qubits, thermal noise)
+- **Efficient**: Imperfect but Efficient (budget constraints)
+- **Noisy**: Noise-Dominant (high decoherence)
+- **Budget**: Budgeted Optimization (resource limits)
+- **Approx**: Approximate Target (tolerance-based)
+
+## 🔧 API Endpoints
+
+- `POST /reset` - Reset environment with task
+- `POST /step` - Execute action
+- `GET /state` - Get current state
+- `GET /health` - Health check
+
+## 📈 Metrics
+
+- **Fidelity**: How close circuit output is to target state
+- **Efficiency**: Circuit depth and gate count
+- **Noise Score**: Resilience to decoherence
+- **Constraints Score**: Hardware constraint satisfaction
+- **Aggregate Score**: Weighted combination of above
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create feature branch
+3. Make changes
+4. Add tests
+5. Submit pull request
+
+## 📄 License
+
+This project is licensed under the BSD-style license.
+
+## 🙏 Acknowledgments
+
+Built using Qiskit, Gradio, FastAPI, and OpenEnv framework.
 
 **Gates available:** Hadamard (H), Pauli-X (X), CNOT, RX(theta), RZ(theta)
 
