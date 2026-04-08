@@ -66,6 +66,33 @@ def info():
 class ResetRequest(BaseModel):
     task_id: str = "easy"
 
+# Root-level endpoints for OpenEnv validation
+@fastapi_app.post("/reset")
+def reset_endpoint(req: ResetRequest = ResetRequest()):
+    """OpenEnv-compliant reset endpoint."""
+    task_id = req.task_id if req else "easy"
+    temp_env = QuantumCircuitEnvironment(seed=42)
+    obs = temp_env.reset(config={"task_id": task_id})
+    return obs.dict() if hasattr(obs, "dict") else obs
+
+@fastapi_app.post("/step")
+def step_endpoint(action: QuantumAction):
+    """OpenEnv-compliant step endpoint."""
+    # Note: This is stateless for validation purposes
+    temp_env = QuantumCircuitEnvironment(seed=42)
+    temp_env.reset(config={"task_id": "easy"})
+    obs = temp_env.step(action)
+    return obs.dict() if hasattr(obs, "dict") else obs
+
+@fastapi_app.get("/state")
+def state_endpoint():
+    """OpenEnv-compliant state endpoint."""
+    temp_env = QuantumCircuitEnvironment(seed=42)
+    temp_env.reset(config={"task_id": "easy"})
+    state = temp_env.state
+    return state.dict() if hasattr(state, "dict") else state
+
+# API endpoints (for programmatic access with global env)
 @fastapi_app.post("/api/reset")
 def api_reset(req: ResetRequest):
     """Programmatic endpoint to reset the environment."""
@@ -531,8 +558,15 @@ def create_gradio_app() -> gr.Blocks:
 # ---------------------------------------------------------------------------
 demo = create_gradio_app()
 
-# Mount Gradio at root - OpenEnv WebSocket at /web is already registered
-app = gr.mount_gradio_app(fastapi_app, demo, path="/")
+# Mount Gradio at /ui instead of root to avoid route conflicts
+app = gr.mount_gradio_app(fastapi_app, demo, path="/ui")
+
+# Add root redirect to Gradio UI
+from fastapi.responses import RedirectResponse
+
+@app.get("/")
+async def root_redirect():
+    return RedirectResponse(url="/ui")
 
 # ---------------------------------------------------------------------------
 # Entry Point
