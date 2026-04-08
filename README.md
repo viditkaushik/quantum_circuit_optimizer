@@ -1,381 +1,413 @@
-# <img width="35" height="35" alt="image" src="https://github.com/user-attachments/assets/2700a971-e5d6-4036-b03f-2f89c9791609" /> OpenEnv: Agentic Execution Environments
-
-An e2e framework for creating, deploying and using isolated execution environments for agentic RL training, built using Gymnasium style simple APIs.
-
-[![PyPI](https://img.shields.io/pypi/v/openenv-core?color=blue)](https://pypi.org/project/openenv-core/)
-[![Discord](https://img.shields.io/badge/Discord-OpenEnv-7289da?style=flat&logo=discord&logoColor=white)](https://discord.gg/YsTYBh6PD9)
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/meta-pytorch/OpenEnv/blob/main/examples/OpenEnv_Tutorial.ipynb)
-[![Docs](https://img.shields.io/badge/Docs-Explore-blue?logo=readthedocs&logoColor=white)](https://meta-pytorch.org/OpenEnv/)
-
+---
+title: Quantum Circuit Optimizer
+emoji: "⚛️"
+colorFrom: indigo
+colorTo: blue
+sdk: docker
+pinned: false
+app_port: 7860
+tags:
+  - quantum
+  - reinforcement-learning
+  - circuit-optimization
+  - gradio
+  - qiskit
 ---
 
-**🚀 Featured Example:** Train LLMs to play BlackJack using [torchforge](https://github.com/meta-pytorch/torchforge) (PyTorch's agentic RL framework): [`examples/grpo_blackjack/`](examples/grpo_blackjack/)
+# ⚛️ Quantum Circuit Optimizer
 
-**🔥 Zero to Hero Tutorial:** End to end tutorial from our [GPU Mode](tutorial/README.md) lecture and other hackathons.
+A web-based reinforcement learning environment for optimizing quantum circuits. Build and optimize quantum circuits step-by-step to maximize fidelity with target quantum states while respecting hardware constraints and noise.
 
-## Quick Start
+## 🌟 Features
 
-Install the OpenEnv core package:
+- **Interactive Web UI**: Built with Gradio for easy circuit construction
+- **Reinforcement Learning Ready**: Compatible with RL algorithms for automated optimization
+- **Hardware-Aware**: Respects qubit connectivity and gate constraints
+- **Noise Simulation**: Includes noise models for realistic NISQ-era circuits
+- **Multiple Tasks**: From simple Bell states to complex unitary approximations
 
-```bash
-pip install openenv-core
-```
+## 🎯 Problem Statement
 
-Install an environment client (e.g., Echo):
+The agent must construct quantum circuits to:
 
-```bash
-pip install git+https://huggingface.co/spaces/openenv/echo_env
-```
+1. **Maximize Fidelity** - Match target quantum states
+2. **Minimize Depth** - Shorter circuits run faster
+3. **Minimize Gate Count** - Fewer operations reduce noise
+4. **Respect Connectivity** - Multi-qubit gates only on connected qubits
+5. **Resist Noise** - Circuits must survive decoherence
 
-Then use the environment:
+## 🚀 Action Space
 
-```python
-import asyncio
-from echo_env import EchoAction, EchoEnv
+| Action | Description | Parameters |
+|--------|-------------|------------|
+| `ADD`  | Add a quantum gate | `gate` (H, X, CNOT, RX, RZ), `qubits`, `parameter` |
+| `REMOVE` | Remove last gate | -- |
+| `SWAP` | Swap two qubits | `qubits` [q1, q2] |
+| `PARAM` | Tune parametric gate | `parameter` (angle in radians) |
+| `STOP` | End episode | -- |
 
-async def main():
-    # Connect to a running Space (async context manager)
-    async with EchoEnv(base_url="https://openenv-echo-env.hf.space") as client:
-        # Reset the environment
-        result = await client.reset()
-        print(result.observation.echoed_message)  # "Echo environment ready!"
+**Available Gates:**
+- **H** - Hadamard (single qubit)
+- **X** - Pauli-X / NOT (single qubit)
+- **CNOT** - Controlled-NOT (two qubits)
+- **RX(θ)** - Rotation around X-axis (parameterized)
+- **RZ(θ)** - Rotation around Z-axis (parameterized)
 
-        # Send messages
-        result = await client.step(EchoAction(message="Hello, World!"))
-        print(result.observation.echoed_message)  # "Hello, World!"
-        print(result.reward)  # 1.3 (based on message length)
+## 🏗️ Architecture
 
-asyncio.run(main())
-```
+- **Backend**: Qiskit for quantum state simulation
+- **Frontend**: Gradio web interface
+- **Server**: FastAPI with WebSocket support
+- **Environment**: Custom Gym-compatible RL environment
 
-**Synchronous usage** is also supported via the `.sync()` wrapper:
+## 🚀 Quick Start
 
-```python
-from echo_env import EchoAction, EchoEnv
+### Local Development
 
-# Use .sync() for synchronous context manager
-with EchoEnv(base_url="https://openenv-echo-env.hf.space").sync() as client:
-    result = client.reset()
-    result = client.step(EchoAction(message="Hello, World!"))
-    print(result.observation.echoed_message)
-```
+1. **Clone and setup:**
+   ```bash
+   git clone https://github.com/viditkaushik/quantum_circuit_optimizer.git
+   cd quantum_circuit_optimizer
+   pip install -r requirements.txt
+   ```
 
-For a detailed quick start, check out the [docs page](https://meta-pytorch.org/OpenEnv/quickstart/).
+2. **Run locally:**
+   ```bash
+   python server/app.py
+   # Or with uvicorn:
+   uvicorn server.app:app --host 0.0.0.0 --port 7860
+   ```
 
-## OpenEnv on partner platforms:
+3. **Open browser:** http://localhost:7860
 
-- [Lightning AI Studio](https://lightning.ai/environments?section=featured)
-- [TRL example](https://huggingface.co/docs/trl/openenv)
-- [Unsloth Google Colab](https://colab.research.google.com/github/unslothai/notebooks/blob/main/nb/OpenEnv_gpt_oss_(20B)_Reinforcement_Learning_2048_Game.ipynb)
-- [ART example](https://art.openpipe.ai/integrations/openenv-integration)
-- [Oumi example](https://github.com/oumi-ai/oumi/blob/main/notebooks/Oumi%20-%20OpenEnv%20GRPO%20with%20trl.ipynb)
-
-## Overview
-
-OpenEnv provides a standard for interacting with agentic execution environments via simple Gymnasium style APIs - `step()`, `reset()`, `state()`. Users of agentic execution environments can interact with the environment during RL training loops using these simple APIs.
-
-In addition to making it easier for researchers and RL framework writers, we also provide tools for environment creators making it easier for them to create richer environments and make them available over familiar protocols like HTTP and packaged using canonical technologies like docker. Environment creators can use the OpenEnv framework to create environments that are isolated, secure, and easy to deploy and use.
-
-The OpenEnv CLI (`openenv`) provides commands to initialize new environments and deploy them to Hugging Face Spaces.
-
-> ⚠️ **Early Development Warning** OpenEnv is currently in an experimental
-> stage. You should expect bugs, incomplete features, and APIs that may change
-> in future versions. The project welcomes bugfixes, but to make sure things are
-> well coordinated you should discuss any significant change before starting the
-> work. It's recommended that you signal your intention to contribute in the
-> issue tracker, either by filing a new issue or by claiming an existing one.
-
-### RFCs
-
-Below is a list of active and historical RFCs for OpenEnv. RFCs are proposals for major changes or features. Please review and contribute!
-
-- [RFC 001: Baseline API and Interface Specifications](https://github.com/meta-pytorch/OpenEnv/pull/26)
-- [RFC 002: Discoverability of environment tools by agents](https://github.com/meta-pytorch/OpenEnv/pull/32)
-- [RFC 003: Add MCP (Model Context Protocol) support](https://github.com/meta-pytorch/OpenEnv/pull/224)
-- [RFC 004: Add delayed rewards support for trajectory-based scoring](https://github.com/meta-pytorch/OpenEnv/pull/337)
-- [RFC 005: Agentic Harness Integration](https://github.com/meta-pytorch/OpenEnv/pull/387)
-
-## Architecture
-
-### Component Overview
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                    Client Application                   │
-│  ┌────────────────┐              ┌──────────────────┐   │
-│  │  EchoEnv       │              │  CodingEnv       │   │
-│  │  (EnvClient)   │              │   (EnvClient)    │   │
-│  └────────┬───────┘              └────────┬─────────┘   │
-└───────────┼───────────────────────────────┼─────────────┘
-            │ WebSocket                     │ WebSocket
-            │ (reset, step, state)          │
-┌───────────▼───────────────────────────────▼─────────────┐
-│              Docker Containers (Isolated)               │
-│  ┌──────────────────────┐    ┌──────────────────────┐   │
-│  │ FastAPI Server       │    │ FastAPI Server       │   │
-│  │   EchoEnvironment    │    │ PythonCodeActEnv     │   │
-│  │ (Environment base)   │    │ (Environment base)   │   │
-│  └──────────────────────┘    └──────────────────────┘   │
-└─────────────────────────────────────────────────────────┘
-```
-
-### Core Components
-
-#### 1. Web Interface
-
-OpenEnv includes a built-in web interface for interactive environment exploration and debugging. The web interface provides:
-
-- **Two-Pane Layout**: HumanAgent interaction on the left, state observation on the right
-- **Real-time Updates**: WebSocket-based live updates without page refresh
-- **Dynamic Forms**: Automatically generated action forms based on environment Action types
-- **Action History**: Complete log of all actions taken and their results
-
-The web interface is **conditionally enabled** based on environment variables:
-
-- **Local Development**: Disabled by default for lightweight development
-- **Manual Override**: Enable with `ENABLE_WEB_INTERFACE=true`
-
-To use the web interface:
-
-```python
-from openenv.core.env_server import create_web_interface_app
-from your_env.models import YourAction, YourObservation
-from your_env.server.your_environment import YourEnvironment
-
-env = YourEnvironment()
-app = create_web_interface_app(env, YourAction, YourObservation)
-```
-
-When enabled, open `http://localhost:8000/web` in your browser to interact with the environment.
-
-#### 2. Environment (Server-Side)
-Base class for implementing environment logic:
-- **`reset()`**: Initialize a new episode, returns initial `Observation`
-- **`step(action)`**: Execute an `Action`, returns resulting `Observation`
-- **`state()`**: Access episode metadata (`State` with episode_id, step_count, etc.)
-
-#### 3. EnvClient (Client-Side)
-Base class for environment communication:
-- **Async by default**: Use `async with` and `await` for all operations
-- **Sync wrapper**: Call `.sync()` to get a `SyncEnvClient` for synchronous usage
-- Handles WebSocket connections to environment server
-- Contains a utility to spin up a docker container locally for the corresponding environment
-- Type-safe action/observation parsing
-
-#### 4. Container Providers
-Manage container deployment:
-- `LocalDockerProvider`: Run containers on local Docker daemon
-- `KubernetesProvider`: Deploy to K8s clusters (future)
-
-#### 5. Models
-Type-safe data structures:
-- `Action`: Base class for environment actions
-- `Observation`: Base class for environment observations
-- `State`: Episode state tracking
-- `StepResult`: Combines observation, reward, done flag
-
-## Project Structure
-
-### For Environment Creators
-
-Use the CLI to quickly scaffold a new environment:
+### Docker Deployment
 
 ```bash
-openenv init my_env
+# Build image
+docker build -t quantum-circuit-optimizer .
+
+# Run container
+docker run -p 7860:7860 quantum-circuit-optimizer
 ```
 
-This creates the following structure:
+## 📊 Tasks
 
-```
-my_env/
-├── .dockerignore        # Docker build exclusions
-├── __init__.py           # Export YourAction, YourObservation, YourEnv
-├── models.py             # Define Action, Observation, State dataclasses
-├── client.py             # Implement YourEnv(EnvClient)
-├── README.md             # Document your environment
-├── openenv.yaml          # Environment manifest
-├── pyproject.toml        # Dependencies and package configuration
-├── outputs/              # Runtime outputs (logs, evals) - gitignored
-│   ├── logs/
-│   └── evals/
-└── server/
-    ├── your_environment.py  # Implement YourEnvironment(Environment)
-    ├── app.py               # Create FastAPI app
-    ├── requirements.txt     # Dependencies for Docker (can be generated)
-    └── Dockerfile           # Define container image
-```
+- **Easy**: Bell State (2 qubits, no noise)
+- **Medium**: GHZ State (3 qubits, depolarizing noise)
+- **Hard**: Unitary Approximation (2 qubits, thermal noise)
+- **Efficient**: Imperfect but Efficient (budget constraints)
+- **Noisy**: Noise-Dominant (high decoherence)
+- **Budget**: Budgeted Optimization (resource limits)
+- **Approx**: Approximate Target (tolerance-based)
 
-#### Dependency Management
+## 🔧 API Endpoints
 
-OpenEnv uses `pyproject.toml` as the primary dependency specification:
+- `POST /reset` - Reset environment with task
+- `POST /step` - Execute action
+- `GET /state` - Get current state
+- `GET /health` - Health check
 
-- **Environment-level `pyproject.toml`**: Each environment defines its own dependencies
-- **Root-level `pyproject.toml`**: Contains shared core dependencies (fastapi, pydantic, uvicorn)
-- **Server `requirements.txt`**: Can be auto-generated from `pyproject.toml` for Docker builds
+## 📈 Metrics
 
-**Development Workflow:**
+- **Fidelity**: How close circuit output is to target state
+- **Efficiency**: Circuit depth and gate count
+- **Noise Score**: Resilience to decoherence
+- **Constraints Score**: Hardware constraint satisfaction
+- **Aggregate Score**: Weighted combination of above
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create feature branch
+3. Make changes
+4. Add tests
+5. Submit pull request
+
+## 📄 License
+
+This project is licensed under the BSD-style license.
+
+## 🙏 Acknowledgments
+
+Built using Qiskit, Gradio, FastAPI, and OpenEnv framework.
+- **H** - Hadamard (single qubit)
+- **X** - Pauli-X / NOT (single qubit)
+- **CNOT** - Controlled-NOT (two qubits)
+- **RX(θ)** - Rotation around X-axis (parameterized)
+- **RZ(θ)** - Rotation around Z-axis (parameterized)
+
+## 🏗️ Architecture
+
+- **Backend**: Qiskit for quantum state simulation
+- **Frontend**: Gradio web interface
+- **Server**: FastAPI with WebSocket support
+- **Environment**: Custom Gym-compatible RL environment
+
+## 🚀 Quick Start
+
+### Local Development
+
+1. **Clone and setup:**
+   ```bash
+   git clone https://github.com/viditkaushik/quantum_circuit_optimizer.git
+   cd quantum_circuit_optimizer
+   pip install -r requirements.txt
+   ```
+
+2. **Run locally:**
+   ```bash
+   python server/app.py
+   # Or with uvicorn:
+   uvicorn server.app:app --host 0.0.0.0 --port 7860
+   ```
+
+3. **Open browser:** http://localhost:7860
+
+### Docker Deployment
 
 ```bash
-# Install environment in editable mode
-cd my_env
-pip install -e .
+# Build image
+docker build -t quantum-circuit-optimizer .
 
-# Or using uv (faster)
-uv pip install -e .
-
-# Run server locally without Docker
-uv run server --host 0.0.0.0 --port 8000
+# Run container
+docker run -p 7860:7860 quantum-circuit-optimizer
 ```
 
-**Benefits:**
-- ✅ **Client-side extensions**: Modify client classes locally without repo changes
-- ✅ **Better dependency management**: Clear separation between environments
-- ✅ **Flexible workflows**: Use pip, uv, or Docker for different scenarios
-- ✅ **CI/CD ready**: Automated dependency generation and validation
+## 📊 Tasks
 
-See [`envs/README.md`](envs/README.md) for a complete guide on building environments.
+- **Easy**: Bell State (2 qubits, no noise)
+- **Medium**: GHZ State (3 qubits, depolarizing noise)
+- **Hard**: Unitary Approximation (2 qubits, thermal noise)
+- **Efficient**: Imperfect but Efficient (budget constraints)
+- **Noisy**: Noise-Dominant (high decoherence)
+- **Budget**: Budgeted Optimization (resource limits)
+- **Approx**: Approximate Target (tolerance-based)
 
-### For Environment Users
+## 🔧 API Endpoints
 
-To use an environment:
-1. Install the client: `pip install git+https://huggingface.co/spaces/openenv/echo-env`
-2. Import: `from echo_env import EchoAction, EchoEnv`
-3. Use async (recommended) or sync API:
+- `POST /reset` - Reset environment with task
+- `POST /step` - Execute action
+- `GET /state` - Get current state
+- `GET /health` - Health check
 
-**Async (recommended):**
-```python
-async with EchoEnv(base_url="...") as client:
-    result = await client.reset()
-    result = await client.step(action)
+## 📈 Metrics
+
+- **Fidelity**: How close circuit output is to target state
+- **Efficiency**: Circuit depth and gate count
+- **Noise Score**: Resilience to decoherence
+- **Constraints Score**: Hardware constraint satisfaction
+- **Aggregate Score**: Weighted combination of above
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create feature branch
+3. Make changes
+4. Add tests
+5. Submit pull request
+
+## 📄 License
+
+This project is licensed under the BSD-style license.
+
+## 🙏 Acknowledgments
+
+Built using Qiskit, Gradio, FastAPI, and OpenEnv framework.
+
+**Gates available:** Hadamard (H), Pauli-X (X), CNOT, RX(theta), RZ(theta)
+
+##  Observation Space
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `circuit_gates` | list | Current gates in the circuit |
+| `fidelity` | float | Overlap with target state (0-1) |
+| `depth` | int | Circuit depth |
+| `gate_count` | int | Number of gates |
+| `noise_estimate` | float | Estimated fidelity loss from noise |
+| `valid_actions` | list | Legal action types |
+| `score` | float | Aggregate grader score (0-1) |
+| `target_description` | str | What state to build |
+
+##  Reward Design
+
+**Shaped reward** -- NOT sparse. The reward at each step is:
+
+```
+reward = current_aggregate_score - previous_aggregate_score
 ```
 
-**Sync (via `.sync()` wrapper):**
-```python
-with EchoEnv(base_url="...").sync() as client:
-    result = client.reset()
-    result = client.step(action)
-```
+The aggregate score is a weighted combination of four modular graders:
 
-See example scripts in `examples/` directory.
+| Grader | Weight | Measures |
+|--------|--------|----------|
+| **Fidelity** | 40-60% | State overlap with target |
+| **Efficiency** | 20% | Depth + gate count vs limits |
+| **Noise** | 15-25% | Gate-by-gate error probability |
+| **Constraints** | 10-15% | Hardware connectivity compliance |
 
-## CLI Commands
+At episode end: **+0.2 bonus** if fidelity >= threshold, **-0.05 penalty** otherwise.
 
-The OpenEnv CLI provides commands to manage environments:
+##  Tasks
 
-- **`openenv init <env_name>`** - Initialize a new environment from template
-- **`openenv push [--repo-id <repo>] [--private]`** - Deploy environment to Hugging Face Spaces
+**7 diverse tasks** covering different quantum circuit optimization challenges:
 
-### Quick Start
+###  1. Easy -- Bell State
+- **Target:** (|00> + |11>) / sqrt(2)
+- **Qubits:** 2 | **Noise:** None | **Connectivity:** Full
+- **Max depth:** 10 | **Max steps:** 20
+
+###  2. Medium -- GHZ State
+- **Target:** (|000> + |111>) / sqrt(2)
+- **Qubits:** 3 | **Noise:** Depolarizing | **Connectivity:** Linear (0<->1<->2)
+- **Max depth:** 15 | **Max steps:** 30
+
+###  3. Hard -- Unitary Approximation
+- **Target:** Ry(pi/3) @ Rz(pi/4) . CNOT
+- **Qubits:** 2 | **Noise:** Thermal | **Connectivity:** Restricted (0<->1 only)
+- **Max depth:** 20 | **Max steps:** 40
+
+###  4. Efficient -- Imperfect but Efficient
+- **Target:** GHZ state with efficiency focus
+- **Qubits:** 3 | **Noise:** None | **Grader weights:** 60% fidelity, 40% efficiency
+
+###  5. Noisy -- Noise-Dominant
+- **Target:** Bell state with noise focus
+- **Qubits:** 2 | **Noise:** Thermal | **Grader weights:** 40% fidelity, 40% noise
+
+###  6. Budget -- Budgeted Optimization
+- **Target:** GHZ state with strict gate budget
+- **Qubits:** 3 | **Max gates:** 3 | **Hard constraint on gate count**
+
+###  7. Approx -- Approximate Target
+- **Target:** 4-qubit GHZ state
+- **Qubits:** 4 | **Tolerance:** 0.80 fidelity | **Rewards approximate solutions**
+
+##  Quick Start
+
+### Prerequisites
 
 ```bash
-# Create a new environment
-openenv init my_game_env
+# Install uv (if not already installed)
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Deploy to Hugging Face (will prompt for login if needed)
-cd my_game_env
+# Install dependencies
+uv sync
+```
+
+### Run Server Locally
+
+```bash
+# Development mode
+uvicorn server.app:app --reload --host 0.0.0.0 --port 8000
+
+# Or via uv
+uv run --project . server
+```
+
+### Test Directly (No Server)
+
+```bash
+python server/my_env_environment.py
+```
+
+### Build & Run Docker
+
+```bash
+docker build -t quantum-circuit-opt:latest .
+docker run -p 8000:8000 quantum-circuit-opt:latest
+```
+
+### Run Inference
+
+```bash
+export HF_TOKEN="your-token"
+export IMAGE_NAME="quantum-circuit-opt:latest"
+python inference.py
+```
+
+### Deploy to HF Spaces
+
+```bash
 openenv push
 ```
 
-For detailed options: `openenv init --help` and `openenv push --help`.
+##  Expected Baseline Results
 
-## Design Principles
+With a capable LLM (e.g., Qwen2.5-72B):
 
-1. **Separation of Concerns**: Clear client-server boundaries
-2. **Type Safety**: Strongly-typed actions, observations, and state
-3. **Container Isolation**: Each environment runs in its own container
-4. **Simple APIs**: Minimal, intuitive interfaces
+| Task | Expected Score | Expected Fidelity |
+|------|---------------|-------------------|
+| Easy (Bell) | 0.65-0.85 | >= 0.90 |
+| Medium (GHZ) | 0.45-0.65 | >= 0.80 |
+| Hard (Unitary) | 0.30-0.50 | >= 0.60 |
+| Efficient | 0.60-0.80 | >= 0.85 |
+| Noisy | 0.40-0.60 | >= 0.75 |
+| Budget | 0.50-0.70 | >= 0.80 |
+| Approx | 0.55-0.75 | >= 0.70 |
 
-## Development
+Scores depend heavily on the LLM's ability to reason about quantum operations.
 
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/meta-pytorch/OpenEnv.git
-cd OpenEnv
-
-# Install core package in editable mode
-pip install -e .
-# Or using uv (faster)
-uv pip install -e .
-```
-
-### Running Tests
-
-OpenEnv uses a modular dependency structure: the core package is minimal, and each environment has its own dependencies. This means some tests require environment-specific packages.
+##  Validation & Testing
 
 ```bash
-# Install pytest (required for running tests)
-uv pip install pytest
+# Run compliance tests (verifies all OpenEnv requirements)
+python test_compliance.py
 
-# Run all tests (skips tests requiring uninstalled dependencies)
-PYTHONPATH=src:envs uv run pytest tests/ -v --tb=short
+# Run pre-deployment validation
+python validate_deployment.py
 
-# Run a specific test file
-PYTHONPATH=src:envs uv run pytest tests/envs/test_echo_environment.py -v
+# Run environment smoke tests
+python server/my_env_environment.py
 ```
 
-**To run environment-specific tests**, install that environment's dependencies:
+##  Project Structure
 
-```bash
-# Example: Install coding_env with dev dependencies (includes smolagents + pytest)
-uv pip install -e "envs/coding_env[dev]"
-
-# Then run coding_env tests
-PYTHONPATH=src:envs uv run pytest tests/envs/test_python_codeact_rewards.py -v
+```
+my_env/
+|---- __init__.py                    # Module exports
+|---- models.py                      # Pydantic action/observation/state models
+|---- client.py                      # QuantumCircuitEnv client
+|---- openenv.yaml                   # OpenEnv manifest
+|---- pyproject.toml                 # Project dependencies
+|---- inference.py                   # Baseline inference script
+|---- Dockerfile                     # Container image
+|---- README.md                      # This file
+|---- graders/
+|   |---- __init__.py
+|   |---- fidelity.py                # State fidelity grader
+|   |---- efficiency.py              # Depth + gate count grader
+|   |---- noise.py                   # Noise resilience grader
+|   |---- constraints.py             # Connectivity compliance grader
+|   |---- aggregate.py               # Weighted score combiner
+|---- server/
+    |---- __init__.py
+    |---- my_env_environment.py      # Core environment + statevector simulator
+    |---- app.py                     # FastAPI application
+    |---- tasks/
+        |---- __init__.py            # Task registry
+        |---- easy.py                # Bell state task
+        |---- medium.py              # GHZ state task
+        |---- hard.py                # Unitary approximation task
 ```
 
-Tests will be automatically skipped if their required dependencies aren't installed.
+##  Technical Design
 
-## Requirements
+### Statevector Simulator
 
-- Python 3.10+
-- Docker Desktop or Docker Engine
-- FastAPI >= 0.104.0
-- Uvicorn >= 0.24.0
-- Requests >= 2.25.0
-- Environment-specific dependencies (e.g., smolagents for coding_env)
+Uses a **pure-NumPy statevector simulator** for deterministic, dependency-light quantum simulation:
+- No native C++ compilation required (unlike Qiskit Aer)
+- Exact simulation for 2-3 qubit circuits
+- Supports H, X, CNOT, RX(theta), RZ(theta), SWAP gates
+- Fully deterministic -- same inputs always produce same outputs
 
-## Supported RL Tools
-The goal of this project is to support a broad set of open and closed tools to help standardize the agentic RL community. If you have a project that supports OpenEnv environments, please put up a PR to add your tool name along with a link to your documentation.
+### Noise Model
 
-### torchforge
-See GRPO BlackJack training example: [`examples/grpo_blackjack/`](examples/grpo_blackjack/)
+Analytical noise estimation rather than density matrix simulation:
+- **Depolarizing:** Per-gate error rates (single-qubit: 0.1%, two-qubit: 1%)
+- **Thermal:** 2x higher error rates than depolarizing
+- Noise score = probability of no error across all gates
 
-### TRL
-See the [TRL example](https://huggingface.co/docs/trl/openenv) on how to integrate OpenEnv environments with GRPO training.
+### Determinism
 
-### Unsloth
-See the 2048 game example based on gpt-oss: [Colab notebook](https://colab.research.google.com/github/unslothai/notebooks/blob/main/nb/OpenEnv_gpt_oss_(20B)_Reinforcement_Learning_2048_Game.ipynb)
-
-### SkyRL
-See the [SkyRL example](https://skyrl.readthedocs.io/en/latest/examples/openenv.html) on how to train on OpenEnv environments with SkyRL.
-
-### ART
-See the [ART example](https://art.openpipe.ai/integrations/openenv-integration) on how OpenEnv environments can be used to train models with ART.
-
-### Oumi
-See the [Oumi example](https://github.com/oumi-ai/oumi/blob/main/notebooks/Oumi%20-%20OpenEnv%20GRPO%20with%20trl.ipynb) on how OpenEnv environments can be used to train models with Oumi.
-
-## Example Environments
-
-| Environment | Description |
-|---|---|
-| [Echo Environment](envs/echo_env/README.md) | Echoes back messages with metadata. Ideal for testing HTTP server infrastructure, learning framework basics, and verifying container deployment. |
-| [Coding Environment](envs/coding_env/README.md) | Sandboxed Python code execution via smolagents. Captures stdout/stderr/exit codes, supports persistent episode context, and provides detailed error handling. |
-| [Chess Environment](envs/chess_env/README.md) | Chess RL environment with configurable opponents and full rules support. |
-| [Atari Environment](envs/atari_env/README.md) | Classic Arcade Learning Environment tasks for RL benchmarking. |
-| [FinRL Environment](envs/finrl_env/README.md) | Financial market simulations for algorithmic trading experiments. |
-
-> Browse the full catalog of community environments at [meta-pytorch.org/OpenEnv/environments](https://meta-pytorch.org/OpenEnv/environments/).
-
-## Community Support & Acknowledgments
-This is an open and community-centric project. If you would like to add your name here, please put up a pull request and tag @jspisak for review. Ty!!
-
-Supporters include: Meta-PyTorch, Hugging Face, [Scaler AI Labs](https://scalerailabs.com), [Patronus AI](https://patronus.ai), [Surge AI](https://surgehq.ai), [LastMile AI](https://www.lastmileai.dev), Unsloth AI, Reflection AI, vLLM, SkyRL (UC-Berkeley), LightningAI, Axolotl AI, Stanford Scaling Intelligence Lab, Mithril, [OpenMined](https://openmined.org/), [Fleet AI](https://fleetai.com), [Halluminate](https://halluminate.ai/), [Turing](https://www.turing.com/), [Scale AI](https://scale.com/) ..
-
-And we'd also like to acknowledge the team at Farama Foundation as the OpenEnv API was heavily inspired by the work you all have done on Gymnasium. Cheers!
-
-## License
-
-BSD 3-Clause License (see [LICENSE](./LICENSE) file)
+All scoring is deterministic: same circuit -> same score. This is critical for reliable RL training and reproducible evaluation.
